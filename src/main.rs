@@ -6,16 +6,19 @@
 
 mod playfield;
 mod playlife;
+mod leds;
 use playfield::Playfield;
 use playlife::Player;
+use leds::cycle_leds;
 
+use defmt::unwrap;
 use defmt_rtt as _;
 use panic_probe as _;
 
 use microbit_bsp::{self, *, embassy_nrf::*};
 
-use embassy_executor::Spawner;
-use embassy_time::Duration;
+use embassy_executor::{self, Spawner};
+use embassy_time::{Duration, Timer};
 
 use nanorand::{self, SeedableRng, Pcg64 as SwRng};
 
@@ -37,13 +40,25 @@ async fn make_rng(board_rng: peripherals::RNG) -> SwRng {
 }
 
 #[embassy_executor::main]
-async fn main(_spawner: Spawner) -> ! {
+async fn main(spawner: Spawner) -> ! {
     let board = Microbit::default();
     let rng = make_rng(board.rng).await;
     let display = Playfield::new(board.display);
     let mut player = Player::new(display, rng);
     let button_a = board.btn_a;
     let button_b = board.btn_b;
+
+    let led = |p| {
+        gpio::Output::new(
+            p,
+            gpio::Level::Low,
+            gpio::OutputDrive::Standard,
+        )
+    };
+    let red = led(gpio::AnyPin::from(board.p9));   // GPIO1
+    let green = led(gpio::AnyPin::from(board.p8));   // GPIO2
+    let blue = led(gpio::AnyPin::from(board.p16));   // GPIO3
+    unwrap!(spawner.spawn(cycle_leds([red, green, blue])));
 
     loop {
         player.step(button_a.is_low(), button_b.is_low()).await;
