@@ -79,7 +79,7 @@ impl Player {
     fn flip(&mut self) {
         for r in &mut self.grid {
             for cell in r {
-                *cell = !*cell;
+                *cell = if *cell == 0 { 1 } else { 0 };
             }
         }
         self.playfield.update(&self.grid);
@@ -89,7 +89,7 @@ impl Player {
     fn randomize(&mut self) {
         for r in &mut self.grid {
             for cell in r {
-                *cell = self.rng.generate();
+                *cell = self.rng.generate::<bool>() as u8;
             }
         }
         self.playfield.update(&self.grid);

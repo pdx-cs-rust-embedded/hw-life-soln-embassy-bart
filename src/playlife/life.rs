@@ -22,7 +22,11 @@ pub fn life(fb: &mut [[u8; 5]; 5]) {
             ];
             let neighbors = coords
                 .into_iter()
-                .map(|(r, c)| prev[r][c])
+                .map(|(r, c)| {
+                    let v = prev[r][c];
+                    assert!(v <= 1);
+                    v
+                })
                 .sum();
             #[allow(clippy::manual_range_contains)]
             match (prev[row][col], neighbors) {
