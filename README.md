@@ -1,7 +1,5 @@
-# mb2-embassy-blinky: modified embassy blinky example for mb2
+# life2: Life on the MicroBit v2 in Embassy
 Bart Massey 2024
 
-This crate is a light rehacking of the Embassy "basic"
-example from the intro document, made to work on the
-MicroBit v2. It blinks an LED on the MB2 with a one-second
-cycle time.
+This crate is a demo of Conway's Life on the MicroBit v2. It
+is written with `embassy`, `embassy-nrf` and `microbit-bsp`.
