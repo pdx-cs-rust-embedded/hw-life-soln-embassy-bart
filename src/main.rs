@@ -5,7 +5,9 @@
 #![no_main]
 
 mod playfield;
-use playfield::*;
+mod playlife;
+use playfield::Playfield;
+use playlife::Player;
 
 use defmt_rtt as _;
 use panic_probe as _;
@@ -38,10 +40,10 @@ async fn make_rng(board_rng: peripherals::RNG) -> SwRng {
 async fn main(_spawner: Spawner) -> ! {
     let board = Microbit::default();
     let rng = make_rng(board.rng).await;
-    let mut display = Playfield::new(board.display, rng);
+    let display = Playfield::new(board.display);
+    let mut player = Player::new(display, rng);
 
     loop {
-        display.randomize();
-        display.display().await;
+        player.step(false, false).await;
     }
 }

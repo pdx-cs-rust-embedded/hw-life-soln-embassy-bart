@@ -1,37 +1,38 @@
 use crate::{
-    SwRng,
     TICK,
-    nanorand::Rng,
     microbit_bsp::LedMatrix,
-    display::{Frame, Bitmap, Brightness},
+    display::{Frame, Brightness},
+    playlife::Grid,
 };
 
 pub struct Playfield {
     display: LedMatrix,
-    rng: SwRng,
     frame: Frame<5, 5>,
 }
 
 impl Playfield {
-    pub fn new(mut display: LedMatrix, rng: SwRng) -> Self {
+    pub fn new(mut display: LedMatrix) -> Self {
         display.clear();
         display.set_brightness(Brightness::MAX);
         Self {
             display,
-            rng,
             frame: Frame::empty(),
         }
     }
 
-    pub fn randomize(&mut self) {
-        let bitmaps = core::array::from_fn(|_| {
-            let r: u8 = self.rng.generate();
-            Bitmap::new(r, 5)
-        });
-        self.frame = Frame::new(bitmaps);
+    pub fn update(&mut self, grid: &Grid) {
+        for (r, row) in grid.iter().enumerate() {
+            for (c, cell) in row.iter().enumerate() {
+                if *cell == 0 {
+                    self.frame.unset(r, c);
+                } else {
+                    self.frame.set(r, c);
+                }
+            }
+        }
     }
 
-    pub async fn display(&mut self) {
+    pub async fn show(&mut self) {
         self.display.apply(self.frame);
         self.display.display(self.frame, TICK).await;
     }
