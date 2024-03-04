@@ -42,8 +42,10 @@ async fn main(_spawner: Spawner) -> ! {
     let rng = make_rng(board.rng).await;
     let display = Playfield::new(board.display);
     let mut player = Player::new(display, rng);
+    let button_a = board.btn_a;
+    let button_b = board.btn_b;
 
     loop {
-        player.step(false, false).await;
+        player.step(button_a.is_low(), button_b.is_low()).await;
     }
 }
