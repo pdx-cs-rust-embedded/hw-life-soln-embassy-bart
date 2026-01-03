@@ -5,32 +5,29 @@ edition = "2021"
 version = "0.1.0"
 
 [dependencies]
-defmt = "0.3.0"
-defmt-rtt = "0.3.0"
-cortex-m-rt = "0.7.0"
-microbit-bsp = "0.3.0"
-embassy-futures = { version = "0.1.1", features = ["defmt"] }
-nanorand = { version = "0.7.0", default-features = false, features = ["pcg64"] }
+defmt = "1.0.1"
+defmt-rtt = "1.1.0"
+cortex-m-rt = "0.7.5"
+embassy-futures = { version = "0.1.2", features = ["defmt"] }
+nanorand = { version = "0.8.0", default-features = false, features = ["pcg64"] }
+
+[dependencies.microbit-bsp]
+path = "/local/src/old/microbit-bsp"
 
 [dependencies.embassy-executor]
-version = "0.5.0"
-features = ["defmt", "integrated-timers", "arch-cortex-m", "executor-thread"]
-
-[dependencies.embassy-time]
-version = "0.3.0"
-features = ["defmt"]
-
-[dependencies.embassy-nrf]
-version = "0.1.0"
-features = ["defmt", "nrf52833", "time-driver-rtc1", "gpiote", "nfc-pins-as-gpio"]
+version = "0.9.1"
+features = ["defmt", "arch-cortex-m", "executor-thread"]
 
 [dependencies.cortex-m]
-version = "0.7.0"
+version = "0.7.7"
 features = ["critical-section-single-core"]
 
 [dependencies.panic-probe]
-version = "0.3.0"
+version = "1.0.0"
 features = ["print-defmt"]
 
 [profile.release]
 debug = 2
+
+[features]
+backlight = []
