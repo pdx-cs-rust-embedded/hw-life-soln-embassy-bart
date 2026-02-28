@@ -7,6 +7,7 @@
 
 use display_interface::{DataFormat, DisplayError, WriteOnlyDataCommand};
 use embedded_hal::{digital::OutputPin, spi::SpiBus};
+use embedded_hal_async::spi::SpiBus as AsyncSpiBus;
 use mipidsi::{
     Display,
     dcs::{SetColumnAddress, SetPageAddress, WriteMemoryStart},
@@ -15,9 +16,14 @@ use mipidsi::{
 
 use crate::playfield::RowWriter;
 
+/// Trait for async data writes to a display interface.
+pub trait AsyncDataWrite {
+    async fn write_bytes_async(&mut self, data: &[u8]);
+}
+
 impl<DI, M, RST> RowWriter for Display<DI, M, RST>
 where
-    DI: WriteOnlyDataCommand,
+    DI: WriteOnlyDataCommand + AsyncDataWrite,
     M: Model,
     RST: OutputPin,
 {
@@ -30,9 +36,9 @@ where
         dcs.write_command(WriteMemoryStart).ok();
     }
 
-    fn write_row(&mut self, row_bytes: &[u8]) {
+    async fn write_row(&mut self, row_bytes: &[u8]) {
         let dcs = unsafe { self.dcs() };
-        dcs.di.send_data(DataFormat::U8(row_bytes)).ok();
+        dcs.di.write_bytes_async(row_bytes).await;
     }
 }
 
@@ -50,6 +56,20 @@ where
 {
     pub fn new(spi: SPI, dc: DC, cs: CS) -> Self {
         Self { spi, dc, cs }
+    }
+}
+
+impl<SPI, DC, CS> AsyncDataWrite for DirectInterface<SPI, DC, CS>
+where
+    SPI: AsyncSpiBus,
+    DC: OutputPin,
+    CS: OutputPin,
+{
+    async fn write_bytes_async(&mut self, data: &[u8]) {
+        self.dc.set_high().ok();
+        self.cs.set_low().ok();
+        self.spi.write(data).await.ok();
+        self.cs.set_high().ok();
     }
 }
 

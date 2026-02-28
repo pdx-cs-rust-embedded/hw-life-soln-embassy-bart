@@ -8,7 +8,7 @@ mod playfield;
 mod playlife;
 mod spi_display;
 use playfield::Playfield;
-use playlife::Player;
+use playlife::{Player, life_async};
 use spi_display::DirectInterface;
 
 #[cfg(feature = "defmt")]
@@ -18,7 +18,7 @@ use panic_probe as _;
 use microbit_bsp::{self, *, embassy_nrf::*};
 pub use embassy_time::{Duration, Instant, Timer};
 
-use embassy_executor::{self, Spawner};
+use embassy_futures::join::join;
 use nanorand::{self, SeedableRng, Pcg64 as SwRng};
 
 pub const FRAME_PERIOD: Duration = Duration::from_millis(33);
@@ -39,7 +39,7 @@ async fn make_rng(board_rng: Peri<'_, peripherals::RNG>) -> SwRng {
 }
 
 #[embassy_executor::main]
-async fn main(_spawner: Spawner) -> ! {
+async fn main(_spawner: embassy_executor::Spawner) -> ! {
     let board = Microbit::default();
     let rng = make_rng(board.rng).await;
 
@@ -69,12 +69,35 @@ async fn main(_spawner: Spawner) -> ! {
         .init(&mut embassy_time::Delay)
         .unwrap();
 
-    let playfield = Playfield::new(raw_display);
-    let mut player: Player<120, 120, _> = Player::new(playfield, rng);
+    let mut playfield = Playfield::new(raw_display).await;
     let button_a = board.btn_a;
     let button_b = board.btn_b;
 
+    let mut player = Player::new(rng);
+    let mut grid_a = [[0u8; 120]; 120];
+    let mut grid_b = [[0u8; 120]; 120];
+
     loop {
-        player.step(button_a.is_low(), button_b.is_low()).await;
+        let deadline = Instant::now() + FRAME_PERIOD;
+        #[cfg(feature = "frame-timing")]
+        let frame_start = Instant::now();
+
+        let ba = button_a.is_low();
+        let bb = button_b.is_low();
+
+        player.advance(ba, bb, &mut grid_a);
+
+        if player.is_running() {
+            join(
+                life_async(&grid_a, &mut grid_b),
+                playfield.show(&grid_a, deadline),
+            ).await;
+            core::mem::swap(&mut grid_a, &mut grid_b);
+        } else {
+            playfield.show(&grid_a, deadline).await;
+        }
+
+        #[cfg(feature = "frame-timing")]
+        player.log_frame_time(frame_start);
     }
 }
