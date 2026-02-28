@@ -1,7 +1,7 @@
 [package]
-name = "life2"
+name = "life3"
 authors = ["Bart Massey <bart.massey@gmail.com>"]
-edition = "2021"
+edition = "2024"
 version = "0.1.0"
 
 [dependencies]
@@ -26,7 +26,8 @@ optional = true
 
 [dependencies.microbit-bsp]
 default-features = false
-path = "/usr/local/src/old/microbit-bsp"
+git = "https://github.com/BartMassey-upstream/microbit-bsp"
+branch = "upgrade-20260103-add-spim23"
 
 [dependencies.nanorand]
 version = "0.8.0"

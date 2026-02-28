@@ -1,5 +1,5 @@
-mod life;
 mod counter;
+mod life;
 
 use counter::Counter;
 pub use life::life_async;
@@ -45,33 +45,24 @@ impl<const NR: usize, const NC: usize> Player<NR, NC> {
     /// Advance the state machine, modifying `grid` as needed
     /// (randomize, flip, etc.). Does NOT compute life — that
     /// is handled externally via `life_async`.
-    pub fn advance(
-        &mut self,
-        button_a: bool,
-        button_b: bool,
-        grid: &mut Grid<NR, NC>,
-    ) {
+    pub fn advance(&mut self, button_a: bool, button_b: bool, grid: &mut Grid<NR, NC>) {
         self.state = match self.state {
             State::Initing => {
                 self.randomize(grid);
-                State::Running { last_flip: Counter(0) }
-            }
-            State::Running { .. } if Self::done(grid) => {
-                State::Paused { remaining: Counter(5) }
-            }
-            State::Running { ref mut last_flip } => {
-                match (button_a, button_b) {
-                    (true, _) => State::Initing,
-                    (_, true) if last_flip.is_zero() => {
-                        State::Flipping
-                    }
-                    _ => {
-                        State::Running {
-                            last_flip: last_flip.decr(),
-                        }
-                    }
+                State::Running {
+                    last_flip: Counter(0),
                 }
             }
+            State::Running { .. } if Self::done(grid) => State::Paused {
+                remaining: Counter(5),
+            },
+            State::Running { ref mut last_flip } => match (button_a, button_b) {
+                (true, _) => State::Initing,
+                (_, true) if last_flip.is_zero() => State::Flipping,
+                _ => State::Running {
+                    last_flip: last_flip.decr(),
+                },
+            },
             State::Paused { ref mut remaining } => {
                 if !remaining.is_zero() {
                     State::Paused {
@@ -83,7 +74,9 @@ impl<const NR: usize, const NC: usize> Player<NR, NC> {
             }
             State::Flipping => {
                 Self::flip(grid);
-                State::Running { last_flip: Counter(5) }
+                State::Running {
+                    last_flip: Counter(5),
+                }
             }
         };
     }
@@ -95,14 +88,11 @@ impl<const NR: usize, const NC: usize> Player<NR, NC> {
 
     #[cfg(feature = "frame-timing")]
     pub fn log_frame_time(&mut self, start: crate::Instant) {
-        let elapsed_us =
-            (crate::Instant::now() - start).as_micros() as u32;
-        self.frame_total_us =
-            self.frame_total_us.saturating_add(elapsed_us);
+        let elapsed_us = (crate::Instant::now() - start).as_micros() as u32;
+        self.frame_total_us = self.frame_total_us.saturating_add(elapsed_us);
         self.frame_count += 1;
         if self.frame_count >= 100 {
-            let avg_us =
-                self.frame_total_us / self.frame_count;
+            let avg_us = self.frame_total_us / self.frame_count;
             defmt::info!(
                 "frame avg: {}ms (~{}fps)",
                 avg_us / 1000,

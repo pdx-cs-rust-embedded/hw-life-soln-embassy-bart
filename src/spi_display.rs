@@ -98,9 +98,7 @@ where
 
 fn send_bytes<SPI: SpiBus>(spi: &mut SPI, data: DataFormat<'_>) -> Result<(), DisplayError> {
     match data {
-        DataFormat::U8(bytes) => {
-            spi.write(bytes).map_err(|_| DisplayError::BusWriteError)
-        }
+        DataFormat::U8(bytes) => spi.write(bytes).map_err(|_| DisplayError::BusWriteError),
         DataFormat::U8Iter(iter) => {
             let mut buf = [0u8; 64];
             let mut n = 0;
@@ -113,17 +111,15 @@ fn send_bytes<SPI: SpiBus>(spi: &mut SPI, data: DataFormat<'_>) -> Result<(), Di
                 }
             }
             if n > 0 {
-                spi.write(&buf[..n]).map_err(|_| DisplayError::BusWriteError)?;
+                spi.write(&buf[..n])
+                    .map_err(|_| DisplayError::BusWriteError)?;
             }
             Ok(())
         }
         DataFormat::U16BE(words) => {
             // Safety: u16 and [u8; 2] have the same layout; we borrow as bytes.
             let bytes = unsafe {
-                core::slice::from_raw_parts(
-                    words.as_ptr() as *const u8,
-                    words.len() * 2,
-                )
+                core::slice::from_raw_parts(words.as_ptr() as *const u8, words.len() * 2)
             };
             spi.write(bytes).map_err(|_| DisplayError::BusWriteError)
         }
@@ -141,7 +137,8 @@ fn send_bytes<SPI: SpiBus>(spi: &mut SPI, data: DataFormat<'_>) -> Result<(), Di
                 }
             }
             if n > 0 {
-                spi.write(&buf[..n]).map_err(|_| DisplayError::BusWriteError)?;
+                spi.write(&buf[..n])
+                    .map_err(|_| DisplayError::BusWriteError)?;
             }
             Ok(())
         }

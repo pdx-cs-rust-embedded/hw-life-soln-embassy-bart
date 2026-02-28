@@ -603,7 +603,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
 
 [[package]]
-name = "life2"
+name = "life3"
 version = "0.1.0"
 dependencies = [
  "cortex-m",
@@ -689,6 +689,7 @@ checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
 [[package]]
 name = "microbit-bsp"
 version = "0.5.0"
+source = "git+https://github.com/BartMassey-upstream/microbit-bsp?branch=upgrade-20260103-add-spim23#5d2f83d2c2069732b4779dff1863373fe4905248"
 dependencies = [
  "cortex-m",
  "defmt 1.0.1",

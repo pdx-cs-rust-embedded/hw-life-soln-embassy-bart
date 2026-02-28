@@ -73,15 +73,17 @@ impl<const NR: usize, const NC: usize, D: RowWriter> Playfield<NR, NC, D> {
                 (&buf_b[..], &mut buf_a)
             };
             // Overlap: DMA sends previous chunk while CPU fills next
-            embassy_futures::join::join(
-                self.display.write_row(send_buf),
-                async {
-                    fill_chunk(grid, chunk, cell_w, cell_h, &colors, fill_buf);
-                },
-            ).await;
+            embassy_futures::join::join(self.display.write_row(send_buf), async {
+                fill_chunk(grid, chunk, cell_w, cell_h, &colors, fill_buf);
+            })
+            .await;
         }
         // Send last chunk
-        let last = if n_chunks % 2 == 1 { &buf_a[..] } else { &buf_b[..] };
+        let last = if n_chunks % 2 == 1 {
+            &buf_a[..]
+        } else {
+            &buf_b[..]
+        };
         self.display.write_row(last).await;
 
         Timer::at(deadline).await;
@@ -103,8 +105,16 @@ fn fill_chunk<const NR: usize, const NC: usize>(
         let offset = row_in_chunk * 480;
         for px in 0..240usize {
             let alive = frame[grid_row][px / cell_w] != 0;
-            buf[offset + px * 2] = if alive { colors.alive_hi } else { colors.dead_hi };
-            buf[offset + px * 2 + 1] = if alive { colors.alive_lo } else { colors.dead_lo };
+            buf[offset + px * 2] = if alive {
+                colors.alive_hi
+            } else {
+                colors.dead_hi
+            };
+            buf[offset + px * 2 + 1] = if alive {
+                colors.alive_lo
+            } else {
+                colors.dead_lo
+            };
         }
     }
 }

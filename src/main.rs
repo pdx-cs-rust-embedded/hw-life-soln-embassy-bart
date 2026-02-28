@@ -15,11 +15,11 @@ use spi_display::DirectInterface;
 use defmt_rtt as _;
 use panic_probe as _;
 
-use microbit_bsp::{self, *, embassy_nrf::*};
 pub use embassy_time::{Duration, Instant, Timer};
+use microbit_bsp::{self, embassy_nrf::*, *};
 
 use embassy_futures::join::join;
-use nanorand::{self, SeedableRng, Pcg64 as SwRng};
+use nanorand::{self, Pcg64 as SwRng, SeedableRng};
 
 pub const FRAME_PERIOD: Duration = Duration::from_millis(33);
 
@@ -48,26 +48,19 @@ async fn main(_spawner: embassy_executor::Spawner) -> ! {
     });
     let mut spim_cfg = spim::Config::default();
     spim_cfg.frequency = spim::Frequency::M32;
-    let spi_bus = spim::Spim::new_txonly(
-        board.spi3,
-        SpimIrqs,
-        board.p13,
-        board.p15,
-        spim_cfg,
-    );
-    let dc  = gpio::Output::new(board.p8,  gpio::Level::Low,  gpio::OutputDrive::Standard);
-    let cs  = gpio::Output::new(board.p1,  gpio::Level::High, gpio::OutputDrive::Standard);
-    let rst = gpio::Output::new(board.p9,  gpio::Level::High, gpio::OutputDrive::Standard);
+    let spi_bus = spim::Spim::new_txonly(board.spi3, SpimIrqs, board.p13, board.p15, spim_cfg);
+    let dc = gpio::Output::new(board.p8, gpio::Level::Low, gpio::OutputDrive::Standard);
+    let cs = gpio::Output::new(board.p1, gpio::Level::High, gpio::OutputDrive::Standard);
+    let rst = gpio::Output::new(board.p9, gpio::Level::High, gpio::OutputDrive::Standard);
     let raw_display = mipidsi::Builder::new(
-            mipidsi::models::GC9A01,
-            DirectInterface::new(spi_bus, dc, cs),
-        )
-        .orientation(mipidsi::options::Orientation::new()
-            .rotate(mipidsi::options::Rotation::Deg180))
-        .invert_colors(mipidsi::options::ColorInversion::Inverted)
-        .reset_pin(rst)
-        .init(&mut embassy_time::Delay)
-        .unwrap();
+        mipidsi::models::GC9A01,
+        DirectInterface::new(spi_bus, dc, cs),
+    )
+    .orientation(mipidsi::options::Orientation::new().rotate(mipidsi::options::Rotation::Deg180))
+    .invert_colors(mipidsi::options::ColorInversion::Inverted)
+    .reset_pin(rst)
+    .init(&mut embassy_time::Delay)
+    .unwrap();
 
     let mut playfield = Playfield::new(raw_display).await;
     let button_a = board.btn_a;
@@ -91,7 +84,8 @@ async fn main(_spawner: embassy_executor::Spawner) -> ! {
             join(
                 life_async(&grid_a, &mut grid_b),
                 playfield.show(&grid_a, deadline),
-            ).await;
+            )
+            .await;
             core::mem::swap(&mut grid_a, &mut grid_b);
         } else {
             playfield.show(&grid_a, deadline).await;
