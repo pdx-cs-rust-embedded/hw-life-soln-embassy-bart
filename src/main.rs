@@ -6,8 +6,10 @@
 
 mod playfield;
 mod playlife;
+mod spi_display;
 use playfield::Playfield;
 use playlife::Player;
+use spi_display::DirectInterface;
 
 #[cfg(feature = "defmt")]
 use defmt_rtt as _;
@@ -54,12 +56,11 @@ async fn main(_spawner: Spawner) -> ! {
         spim_cfg,
     );
     let dc  = gpio::Output::new(board.p8,  gpio::Level::Low,  gpio::OutputDrive::Standard);
-    let cs  = gpio::Output::new(board.p1,  gpio::Level::Low,  gpio::OutputDrive::Standard);
+    let cs  = gpio::Output::new(board.p1,  gpio::Level::High, gpio::OutputDrive::Standard);
     let rst = gpio::Output::new(board.p9,  gpio::Level::High, gpio::OutputDrive::Standard);
-    let spi_dev = embedded_hal_bus::spi::ExclusiveDevice::new_no_delay(spi_bus, cs).unwrap();
     let raw_display = mipidsi::Builder::new(
             mipidsi::models::GC9A01,
-            display_interface_spi::SPIInterface::new(spi_dev, dc),
+            DirectInterface::new(spi_bus, dc, cs),
         )
         .orientation(mipidsi::options::Orientation::new()
             .rotate(mipidsi::options::Rotation::Deg180))

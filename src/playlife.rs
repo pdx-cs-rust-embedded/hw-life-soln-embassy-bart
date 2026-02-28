@@ -5,7 +5,7 @@ use counter::Counter;
 use life::life;
 
 use crate::{Playfield, SwRng, nanorand::Rng, Instant, FRAME_PERIOD};
-use embedded_graphics::{draw_target::DrawTarget, pixelcolor::Rgb565};
+use crate::playfield::RowWriter;
 
 /// Play states.
 pub enum State {
@@ -34,7 +34,7 @@ pub struct Player<const NR: usize, const NC: usize, D> {
     frame_total_us: u32,
 }
 
-impl<const NR: usize, const NC: usize, D: DrawTarget<Color = Rgb565>>
+impl<const NR: usize, const NC: usize, D: RowWriter>
     Player<NR, NC, D>
 {
     pub fn new(playfield: Playfield<NR, NC, D>, rng: SwRng) -> Self {
