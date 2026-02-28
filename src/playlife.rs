@@ -19,17 +19,17 @@ pub enum State {
     Running { last_flip: Counter },
 }
 
-pub type Grid = [[u8; 5]; 5];
+pub type Grid<const NR: usize, const NC: usize> = [[u8; NC]; NR];
 
-pub struct Player {
-    playfield: Playfield,
-    grid: Grid,
+pub struct Player<const NR: usize, const NC: usize> {
+    playfield: Playfield<NR, NC>,
+    grid: Grid<NR, NC>,
     state: State,
     rng: SwRng,
 }
 
-impl Player {
-    pub fn new(playfield: Playfield, rng: SwRng) -> Self {
+impl Player<5, 5> {
+    pub fn new(playfield: Playfield<5, 5>, rng: SwRng) -> Self {
         let grid = Grid::default();
         let state = State::Initing;
         Self { playfield, grid, state, rng }

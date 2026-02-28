@@ -1,9 +1,5 @@
-//! Play Conway's Game of Life on the MB2 LED "display" —
+//! Play Conway's Game of Life on a TFT "display" —
 //! Embassy version.
-//!
-//! The `backlight` feature enables driving an external RGB
-//! LED as a "backlight" that goes through a RGB color cycle
-//! independent of the game.
 
 #![no_std]
 #![no_main]
@@ -48,7 +44,7 @@ async fn main(_spawner: Spawner) -> ! {
     let board = Microbit::default();
     let rng = make_rng(board.rng).await;
     let display = Playfield::new(board.display);
-    let mut player = Player::new(display, rng);
+    let mut player: Player<5, 5> = Player::new(display, rng);
     let button_a = board.btn_a;
     let button_b = board.btn_b;
 

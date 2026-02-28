@@ -5,12 +5,12 @@ use crate::{
     playlife::Grid,
 };
 
-pub struct Playfield {
+pub struct Playfield<const NR: usize, const NC: usize> {
     display: LedMatrix,
-    frame: Frame<5, 5>,
+    frame: Frame<NR, NC>,
 }
 
-impl Playfield {
+impl Playfield<5, 5> {
     pub fn new(mut display: LedMatrix) -> Self {
         display.clear();
         display.set_brightness(Brightness::MAX);
@@ -20,7 +20,7 @@ impl Playfield {
         }
     }
 
-    pub fn update(&mut self, grid: &Grid) {
+    pub fn update(&mut self, grid: &Grid<5, 5>) {
         for (r, row) in grid.iter().enumerate() {
             for (c, cell) in row.iter().enumerate() {
                 if *cell == 0 {

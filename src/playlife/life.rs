@@ -2,14 +2,14 @@
 //! buffer" of `u8` pixels that can be either 0 or 1.
 
 /// Make a step according to the Game of Life rules.
-pub fn life(fb: &mut [[u8; 5]; 5]) {
+pub fn life<const NR: usize, const NC: usize>(fb: &mut [[u8; NC]; NR]) {
     let prev = *fb;
-    for row in 0..5 {
-        for col in 0..5 {
-            let prev_row = (row + 4) % 5;
-            let next_row = (row + 1) % 5;
-            let prev_col = (col + 4) % 5;
-            let next_col = (col + 1) % 5;
+    for row in 0..NR {
+        for col in 0..NC {
+            let prev_row = (row + NR - 1) % NR;
+            let next_row = (row + 1) % NR;
+            let prev_col = (col + NC - 1) % NC;
+            let next_col = (col + 1) % NC;
             let coords = [
                 (prev_row, prev_col),
                 (prev_row, col),
