@@ -16,8 +16,7 @@ use playlife::Player;
 #[cfg(feature = "backlight")]
 use leds::cycle_leds;
 
-#[cfg(feature = "backlight")]
-use defmt::unwrap;
+#[cfg(feature = "defmt")]
 use defmt_rtt as _;
 use panic_probe as _;
 
@@ -67,7 +66,7 @@ async fn main(_spawner: Spawner) -> ! {
         let red = led!(board.p9);   // GPIO1
         let green = led!(board.p8);   // GPIO2
         let blue = led!(board.p16);   // GPIO3
-        unwrap!(_spawner.spawn(cycle_leds([red, green, blue])));
+        _spawner.spawn(cycle_leds([red, green, blue])).unwrap();
     }
 
     loop {

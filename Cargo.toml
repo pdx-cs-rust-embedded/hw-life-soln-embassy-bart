@@ -5,29 +5,43 @@ edition = "2021"
 version = "0.1.0"
 
 [dependencies]
-defmt = "1.0.1"
-defmt-rtt = "1.1.0"
 cortex-m-rt = "0.7.5"
-embassy-futures = { version = "0.1.2", features = ["defmt"] }
-nanorand = { version = "0.8.0", default-features = false, features = ["pcg64"] }
+panic-probe = "1.0.0"
+embassy-futures = "0.1.2"
+
+[dependencies.defmt-rtt]
+version = "1.1.0"
+optional = true
 
 [dependencies.microbit-bsp]
-path = "/local/src/old/microbit-bsp"
+version = "0.5.0"
+default-features = false
+git = "https://github.com/BartMassey-upstream/microbit-bsp"
+branch = "upgrade-20260103"
+
+[dependencies.nanorand]
+version = "0.8.0"
+default-features = false
+features = ["pcg64"]
 
 [dependencies.embassy-executor]
 version = "0.9.1"
-features = ["defmt", "arch-cortex-m", "executor-thread"]
+features = ["arch-cortex-m", "executor-thread"]
 
 [dependencies.cortex-m]
 version = "0.7.7"
 features = ["critical-section-single-core"]
 
-[dependencies.panic-probe]
-version = "1.0.0"
-features = ["print-defmt"]
 
 [profile.release]
 debug = 2
 
 [features]
 backlight = []
+defmt = [
+      "dep:defmt-rtt",
+      "embassy-futures/defmt",
+      "embassy-executor/defmt",
+      "panic-probe/print-defmt",
+      "microbit-bsp/defmt",
+]
