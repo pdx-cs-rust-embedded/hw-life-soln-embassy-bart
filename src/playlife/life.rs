@@ -1,9 +1,13 @@
-//! Conway's Game of Life implemented on a 5×5 "frame
+//! Conway's Game of Life implemented on an `NR`×`NC` "frame
 //! buffer" of `u8` pixels that can be either 0 or 1.
 
-/// Make a step according to the Game of Life rules.
-pub fn life<const NR: usize, const NC: usize>(fb: &mut [[u8; NC]; NR]) {
-    let prev = *fb;
+/// Make a step according to the Game of Life rules,
+/// reading from `current` and writing into `next`.
+#[allow(clippy::manual_range_contains)]
+pub fn life<const NR: usize, const NC: usize>(
+    current: &[[u8; NC]; NR],
+    next: &mut [[u8; NC]; NR],
+) {
     for row in 0..NR {
         for col in 0..NC {
             let prev_row = (row + NR - 1) % NR;
@@ -20,20 +24,19 @@ pub fn life<const NR: usize, const NC: usize>(fb: &mut [[u8; NC]; NR]) {
                 (next_row, col),
                 (next_row, next_col),
             ];
-            let neighbors = coords
+            let neighbors: u8 = coords
                 .into_iter()
                 .map(|(r, c)| {
-                    let v = prev[r][c];
+                    let v = current[r][c];
                     assert!(v <= 1);
                     v
                 })
                 .sum();
-            #[allow(clippy::manual_range_contains)]
-            match (prev[row][col], neighbors) {
-                (1, n) if n < 2 || n > 3 => fb[row][col] = 0,
-                (0, 3) => fb[row][col] = 1,
-                (_, _) => (),
-            }
+            next[row][col] = match (current[row][col], neighbors) {
+                (1, n) if n < 2 || n > 3 => 0,
+                (0, 3) => 1,
+                (v, _) => v,
+            };
         }
     }
 }

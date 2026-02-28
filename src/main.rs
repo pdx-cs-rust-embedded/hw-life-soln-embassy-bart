@@ -1,4 +1,4 @@
-//! Play Conway's Game of Life on a TFT "display" —
+//! Play Conway's Game of Life on a TFT display —
 //! Embassy version.
 
 #![no_std]
@@ -6,23 +6,20 @@
 
 mod playfield;
 mod playlife;
-mod leds;
 use playfield::Playfield;
 use playlife::Player;
-#[cfg(feature = "backlight")]
-use leds::cycle_leds;
 
 #[cfg(feature = "defmt")]
 use defmt_rtt as _;
 use panic_probe as _;
 
-use microbit_bsp::{self, *, embassy_nrf::*, embassy_time::{Duration, Timer}};
+use microbit_bsp::{self, *, embassy_nrf::*};
+pub use embassy_time::{Duration, Instant, Timer};
 
 use embassy_executor::{self, Spawner};
-
 use nanorand::{self, SeedableRng, Pcg64 as SwRng};
 
-pub const TICK: Duration = Duration::from_millis(100u64);
+pub const FRAME_PERIOD: Duration = Duration::from_millis(33);
 
 async fn make_rng(board_rng: Peri<'_, peripherals::RNG>) -> SwRng {
     bind_interrupts!(struct Irqs {
@@ -43,27 +40,38 @@ async fn make_rng(board_rng: Peri<'_, peripherals::RNG>) -> SwRng {
 async fn main(_spawner: Spawner) -> ! {
     let board = Microbit::default();
     let rng = make_rng(board.rng).await;
-    let display = Playfield::new(board.display);
-    let mut player: Player<5, 5> = Player::new(display, rng);
+
+    bind_interrupts!(struct SpimIrqs {
+        SPIM3 => spim::InterruptHandler<peripherals::SPI3>;
+    });
+    let mut spim_cfg = spim::Config::default();
+    spim_cfg.frequency = spim::Frequency::M32;
+    let spi_bus = spim::Spim::new_txonly(
+        board.spi3,
+        SpimIrqs,
+        board.p13,
+        board.p15,
+        spim_cfg,
+    );
+    let dc  = gpio::Output::new(board.p8,  gpio::Level::Low,  gpio::OutputDrive::Standard);
+    let cs  = gpio::Output::new(board.p1,  gpio::Level::Low,  gpio::OutputDrive::Standard);
+    let rst = gpio::Output::new(board.p9,  gpio::Level::High, gpio::OutputDrive::Standard);
+    let spi_dev = embedded_hal_bus::spi::ExclusiveDevice::new_no_delay(spi_bus, cs).unwrap();
+    let raw_display = mipidsi::Builder::new(
+            mipidsi::models::GC9A01,
+            display_interface_spi::SPIInterface::new(spi_dev, dc),
+        )
+        .orientation(mipidsi::options::Orientation::new()
+            .rotate(mipidsi::options::Rotation::Deg180))
+        .invert_colors(mipidsi::options::ColorInversion::Inverted)
+        .reset_pin(rst)
+        .init(&mut embassy_time::Delay)
+        .unwrap();
+
+    let playfield = Playfield::new(raw_display);
+    let mut player: Player<120, 120, _> = Player::new(playfield, rng);
     let button_a = board.btn_a;
     let button_b = board.btn_b;
-
-    #[cfg(feature = "backlight")] {
-        macro_rules! led {
-            ($pin:expr) => {
-                gpio::Output::new(
-                    $pin,
-                    gpio::Level::Low,
-                    gpio::OutputDrive::Standard,
-                )
-            };
-        }
-
-        let red = led!(board.p9);   // GPIO1
-        let green = led!(board.p8);   // GPIO2
-        let blue = led!(board.p16);   // GPIO3
-        _spawner.spawn(cycle_leds([red, green, blue])).unwrap();
-    }
 
     loop {
         player.step(button_a.is_low(), button_b.is_low()).await;
